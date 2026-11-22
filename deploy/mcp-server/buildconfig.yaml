@@ -1,0 +1,23 @@
+# Faz o build da imagem dentro do OpenShift a partir deste repositório.
+# Inicie com: oc start-build ocp-cluster-mcp -n ocp-mcp --follow
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: ocp-cluster-mcp
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/victorfim/ocp-ai-lab.git
+      ref: main
+    contextDir: mcp-server
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Containerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: ocp-cluster-mcp:latest
+  triggers:
+    - type: ConfigChange

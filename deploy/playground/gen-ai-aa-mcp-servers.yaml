@@ -1,0 +1,22 @@
+# Registra o servidor MCP no Gen AI Playground do OpenShift AI 3.5.
+# Precisa ser aplicado por um cluster-admin:
+#   oc apply -f deploy/playground/gen-ai-aa-mcp-servers.yaml
+#
+# ATENÇÃO: este ConfigMap é único para o cluster inteiro. Se ele já existir
+# (com outros servidores MCP), NÃO aplique este arquivo por cima: adicione só
+# a chave "OCP-Cluster-MCP" com:
+#   oc edit configmap gen-ai-aa-mcp-servers -n redhat-ods-applications
+#
+# Formato documentado em:
+# https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/3.5/html/experimenting_with_models_in_the_gen_ai_playground/playground-prerequisites_rhoai-user
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: gen-ai-aa-mcp-servers
+  namespace: redhat-ods-applications
+data:
+  OCP-Cluster-MCP: |
+    {
+      "url": "http://ocp-cluster-mcp.ocp-mcp.svc.cluster.local:8000/mcp",
+      "description": "Consultas somente leitura ao cluster OpenShift em execução: versão, operadores, nós, projetos, pods, logs, deployments, eventos, rotas e modelos do OpenShift AI."
+    }

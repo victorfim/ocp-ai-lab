@@ -1,0 +1,13 @@
+FROM registry.access.redhat.com/ubi9/python-312:latest
+
+WORKDIR /opt/app-root/src
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app ./app
+
+ENV MCP_HOST=0.0.0.0 \
+    MCP_PORT=8000 \
+    PYTHONUNBUFFERED=1
+EXPOSE 8000
+# The UBI image already runs as a non-root user (1001); OpenShift may assign a random UID.
+CMD ["python", "-m", "app.server"]

@@ -1,0 +1,15 @@
+# URL interna usada pelo OGX e pelo Playground:
+#   http://ocp-cluster-mcp.ocp-mcp.svc.cluster.local:8000/mcp
+# Não criamos Route de propósito: o servidor não tem autenticação, então
+# fica acessível só de dentro do cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ocp-cluster-mcp
+spec:
+  selector:
+    app: ocp-cluster-mcp
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

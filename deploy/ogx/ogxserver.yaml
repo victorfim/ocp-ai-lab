@@ -1,0 +1,40 @@
+# Exemplo de OGXServer (OpenShift AI 3.5, Technology Preview).
+# Só é necessário se você ainda NÃO tem um servidor OGX no projeto (o Playground
+# cria o seu próprio). Pré-requisitos: operador OGX ativo
+# (dsc.spec.components.ogx.managementState: Managed), PostgreSQL 14+ e o
+# Secret postgres-secret. Campos baseados em:
+# https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/3.5/html/working_with_ogx/deploying-ogx-server_rag
+# Confira no seu cluster com: oc explain ogxserver.spec
+apiVersion: ogx.io/v1beta1
+kind: OGXServer
+metadata:
+  name: ogx-server
+  namespace: <seu-projeto>
+spec:
+  distribution:
+    name: rh-dev
+  workload:
+    replicas: 1
+    overrides:
+      env:
+        # Endpoint OpenAI-compatível do modelo servido pelo vLLM (termina em /v1).
+        # O modelo precisa suportar tool calling (--enable-auto-tool-choice e --tool-call-parser).
+        - name: VLLM_URL
+          value: "https://<modelo>-predictor.<seu-projeto>.svc.cluster.local:8443/v1"
+        - name: INFERENCE_MODEL
+          value: "<nome-do-modelo>"
+        - name: VLLM_TLS_VERIFY
+          value: "false"
+        - name: POSTGRES_HOST
+          value: "<host-do-postgres>"
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_DB
+          value: ogx
+        - name: POSTGRES_USER
+          value: ogx
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocp-cluster-mcp
+  annotations:
+    # Atualiza o Deployment automaticamente quando um novo build termina.
+    image.openshift.io/triggers: >-
+      [{"from":{"kind":"ImageStreamTag","name":"ocp-cluster-mcp:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"mcp\")].image"}]
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocp-cluster-mcp
+  template:
+    metadata:
+      labels:
+        app: ocp-cluster-mcp
+    spec:
+      serviceAccountName: ocp-cluster-mcp
+      containers:
+        - name: mcp
+          image: ocp-cluster-mcp:latest
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: LOG_LEVEL
+              value: INFO
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}
+            seccompProfile: {type: RuntimeDefault}

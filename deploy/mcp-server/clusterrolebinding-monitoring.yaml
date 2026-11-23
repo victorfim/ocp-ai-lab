@@ -1,0 +1,15 @@
+# Permite consultar o Prometheus do cluster (somente leitura) para obter o uso
+# real de disco dos PVCs. Sem isto, get_project_capacity mostra só o tamanho
+# solicitado dos PVCs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ocp-cluster-mcp-monitoring-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+  - kind: ServiceAccount
+    name: ocp-cluster-mcp
+    namespace: ocp-ai-lab   # ajuste se mudar o namespace no kustomization.yaml

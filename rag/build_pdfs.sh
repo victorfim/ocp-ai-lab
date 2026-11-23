@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Gera os PDFs dos runbooks (o upload do Playground aceita PDF, DOC ou CSV, não Markdown).
-# Requer pandoc e libreoffice. Uso: ./rag/build_pdfs.sh
+# Requer pandoc, libreoffice e o pacote Python pypdf. Uso: ./rag/build_pdfs.sh
 set -euo pipefail
 cd "$(dirname "$0")"
 tmp=$(mktemp -d)
@@ -12,3 +12,5 @@ for md in runbooks/*.md; do
   libreoffice --headless --convert-to pdf --outdir pdf "$tmp/$name.docx" >/dev/null
   echo "pdf/$name.pdf"
 done
+# Corrige a data dos metadados, que o OGX não consegue ler ("Can not convert date").
+python3 fix_pdf_metadata.py pdf/*.pdf

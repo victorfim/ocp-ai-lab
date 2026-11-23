@@ -44,7 +44,7 @@ Documentação: [Testing your model with RAG](https://docs.redhat.com/en/documen
 O RAG no Playground e o pgvector automático estão em **Technology Preview**.
 
 Para regenerar os PDFs depois de editar um `.md`: `./rag/build_pdfs.sh` (precisa de
-`pandoc` e `libreoffice`).
+`pandoc`, `libreoffice` e `pip install pypdf`; o script corrige a data dos metadados, que o OGX não aceita no formato do LibreOffice).
 
 ## 2. Prompt de sistema (RAG + MCP)
 

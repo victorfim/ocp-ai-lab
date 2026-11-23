@@ -7,6 +7,7 @@ resources:
   - serviceaccount.yaml
   - clusterrole.yaml
   - clusterrolebinding.yaml
+  - clusterrolebinding-monitoring.yaml
   - imagestream.yaml
   - buildconfig.yaml
   - deployment.yaml

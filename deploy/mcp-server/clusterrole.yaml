@@ -5,7 +5,15 @@ metadata:
   name: ocp-cluster-mcp-readonly
 rules:
   - apiGroups: [""]
-    resources: [nodes, namespaces, pods, pods/log, events, services]
+    resources: [nodes, namespaces, pods, pods/log, events, services, persistentvolumeclaims, resourcequotas]
+    verbs: [get, list, watch]
+  # Uso atual de CPU/memória de nós e pods (describe_nodes, get_project_capacity).
+  - apiGroups: [metrics.k8s.io]
+    resources: [nodes, pods]
+    verbs: [get, list]
+  # Atualizações de operadores instalados pelo OperatorHub (check_updates).
+  - apiGroups: [operators.coreos.com]
+    resources: [subscriptions, installplans]
     verbs: [get, list, watch]
   - apiGroups: [apps]
     resources: [deployments]

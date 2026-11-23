@@ -1,0 +1,16 @@
+# Leitura das métricas do monitoramento do cluster (Thanos Querier), usada por
+# get_project_capacity para mostrar o espaço realmente usado nos PVCs.
+# "cluster-monitoring-view" é uma ClusterRole do próprio OpenShift, somente leitura.
+# Opcional: sem este binding a ferramenta mostra só a capacidade solicitada nos PVCs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ocp-cluster-mcp-monitoring-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+  - kind: ServiceAccount
+    name: ocp-cluster-mcp
+    namespace: ocp-mcp   # ajuste se mudar o namespace no kustomization.yaml

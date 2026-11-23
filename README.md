@@ -26,9 +26,12 @@ execução, pronto para ser testado no **Gen AI Playground** e por um cliente OG
 | Ferramenta | O que responde |
 |---|---|
 | `get_cluster_version` | Versão do OpenShift, canal, atualizações disponíveis |
+| `check_updates` | Atualizações do OpenShift (recomendadas e condicionais, com riscos, e se o cluster pode ser atualizado) e operadores do OperatorHub com versão nova ou aguardando aprovação |
 | `list_cluster_operators` | Estado dos ClusterOperators (opção: só os com problema) |
 | `list_nodes` | Nós, papéis, prontidão, CPU, memória e GPU |
+| `describe_nodes` | Hardware de cada nó: tipo e família da instância, zona, CPU, memória, disco efêmero, GPU e uso atual, com totais por família |
 | `list_namespaces` | Projetos, incluindo se são projetos de ciência de dados |
+| `get_project_capacity` | Consumo por projeto: uso atual de CPU e memória, requests/limits, quotas e disco (PVCs solicitados e espaço usado, se o monitoramento permitir) |
 | `list_pods` | Pods, prontidão, reinícios e motivos de falha (opção: só os com problema) |
 | `get_pod_logs` | Últimas linhas de log de um pod (máximo 500) |
 | `list_deployments` | Réplicas desejadas e prontas, imagens |
@@ -37,7 +40,10 @@ execução, pronto para ser testado no **Gen AI Playground** e por um cliente OG
 | `list_inference_services` | Modelos servidos pelo OpenShift AI (KServe) |
 
 **Por que é seguro:** o ServiceAccount só tem `get/list/watch` (veja
-`deploy/mcp-server/clusterrole.yaml`) e **não tem acesso a Secrets**. O servidor não
+`deploy/mcp-server/clusterrole.yaml`) e **não tem acesso a Secrets**. Para mostrar o
+espaço realmente usado nos PVCs, `get_project_capacity` lê as métricas do monitoramento
+do cluster via a ClusterRole `cluster-monitoring-view` do próprio OpenShift
+(`clusterrolebinding-monitoring.yaml`, opcional). O servidor não
 tem autenticação, por isso não criamos Route: ele só é acessível de dentro do cluster.
 Atenção: logs de pods podem conter dados sensíveis; remova `pods/log` da ClusterRole se
 não quiser expor isso.

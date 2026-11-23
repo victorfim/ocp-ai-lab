@@ -8,6 +8,8 @@ Exemplos:
     export MAAS_TOKEN=<token>   # só para modelos do Models as a Service
     python ask_cluster.py "Quais pods estão com problema no cluster?"
     python ask_cluster.py --model llama32-3b "Qual a versão do OpenShift?"
+    # Com RAG: busca nos runbooks (crie o vector store com ingest_runbooks.py)
+    python ask_cluster.py --vector-store vs_... "Há nó NotReady? O que o runbook manda fazer?"
 """
 
 from __future__ import annotations
@@ -27,6 +29,12 @@ INSTRUCTIONS = (
     "Responda em português, de forma objetiva, citando nomes de recursos."
 )
 
+RAG_INSTRUCTIONS = (
+    " Para políticas, severidades, janelas de mudança, limites e procedimentos da casa, "
+    "use SEMPRE a ferramenta de busca nos runbooks (file_search) e cite o código do runbook "
+    "(por exemplo RB-03). Combine: dados do cluster vêm do MCP, regras vêm dos runbooks."
+)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -37,6 +45,9 @@ def main() -> int:
                         help="URL do servidor MCP, vista pelo OGX. Padrão: $MCP_URL")
     parser.add_argument("--model", default=os.environ.get("OGX_MODEL"),
                         help="ID do modelo no OGX. Padrão: $OGX_MODEL ou o primeiro LLM listado")
+    parser.add_argument("--vector-store", action="append", default=[],
+                        help="ID de vector store para RAG (file_search). Pode repetir. Padrão: $OGX_VECTOR_STORE")
+    parser.add_argument("--no-mcp", action="store_true", help="Não passa o servidor MCP (só RAG)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Mostra as chamadas de ferramenta")
     args = parser.parse_args()
 
@@ -62,24 +73,34 @@ def main() -> int:
         if args.verbose:
             print(f"[modelo] {model}  (disponíveis: {', '.join(models)})", file=sys.stderr)
 
+    vector_stores = args.vector_store or ([os.environ["OGX_VECTOR_STORE"]] if os.environ.get("OGX_VECTOR_STORE") else [])
+    tools = []
+    if not args.no_mcp:
+        tools.append({
+            "type": "mcp",
+            "server_label": "ocp-cluster",
+            "server_url": args.mcp_url,
+            "require_approval": "never",
+        })
+    if vector_stores:
+        tools.append({"type": "file_search", "vector_store_ids": vector_stores})
+    if not tools:
+        print("Sem ferramentas: tire --no-mcp ou passe --vector-store.", file=sys.stderr)
+        return 1
+
     response = client.responses.create(
         model=model,
-        instructions=INSTRUCTIONS,
+        instructions=INSTRUCTIONS + (RAG_INSTRUCTIONS if vector_stores else ""),
         input=args.question,
-        tools=[
-            {
-                "type": "mcp",
-                "server_label": "ocp-cluster",
-                "server_url": args.mcp_url,
-                "require_approval": "never",
-            }
-        ],
+        tools=tools,
     )
 
     if args.verbose:
         for item in response.output:
             if item.type == "mcp_call":
                 print(f"[ferramenta] {item.name}({item.arguments})", file=sys.stderr)
+            elif item.type == "file_search_call":
+                print(f"[busca nos runbooks] {getattr(item, 'queries', '')}", file=sys.stderr)
             elif item.type == "mcp_list_tools":
                 print(f"[mcp] {len(item.tools)} ferramentas disponíveis", file=sys.stderr)
 

@@ -85,4 +85,7 @@ def test_tools_are_registered():
     import asyncio
     from app.server import mcp
     names = {t.name for t in asyncio.run(mcp.list_tools())}
-    assert {"get_cluster_version", "list_pods", "get_pod_logs", "list_inference_services"} <= names
+    assert {"get_cluster_version", "list_pods", "get_pod_logs", "list_inference_services",
+            "get_node_resources", "check_cluster_updates", "check_operator_updates",
+            "get_project_capacity"} <= names
+    assert len(names) == 14

@@ -5,7 +5,7 @@ metadata:
   name: ocp-cluster-mcp-readonly
 rules:
   - apiGroups: [""]
-    resources: [nodes, namespaces, pods, pods/log, events, services]
+    resources: [nodes, namespaces, pods, pods/log, events, services, persistentvolumeclaims, resourcequotas]
     verbs: [get, list, watch]
   - apiGroups: [apps]
     resources: [deployments]
@@ -18,4 +18,12 @@ rules:
     verbs: [get, list, watch]
   - apiGroups: [serving.kserve.io]
     resources: [inferenceservices]
+    verbs: [get, list, watch]
+  # Uso real de CPU e memória (o mesmo de "oc adm top").
+  - apiGroups: [metrics.k8s.io]
+    resources: [pods, nodes]
+    verbs: [get, list]
+  # Atualizações de operadores (OLM).
+  - apiGroups: [operators.coreos.com]
+    resources: [subscriptions]
     verbs: [get, list, watch]

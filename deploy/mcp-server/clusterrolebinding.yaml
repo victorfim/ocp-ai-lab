@@ -9,4 +9,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ocp-cluster-mcp
-    namespace: ocp-mcp   # ajuste se mudar o namespace no kustomization.yaml
+    namespace: ocp-ai-lab   # ajuste se mudar o namespace no kustomization.yaml

@@ -17,6 +17,6 @@ metadata:
 data:
   OCP-Cluster-MCP: |
     {
-      "url": "http://ocp-cluster-mcp.ocp-mcp.svc.cluster.local:8000/mcp",
-      "description": "Consultas somente leitura ao cluster OpenShift em execução: versão, operadores, nós, projetos, pods, logs, deployments, eventos, rotas e modelos do OpenShift AI."
+      "url": "http://ocp-cluster-mcp.ocp-ai-lab.svc.cluster.local:8000/mcp",
+      "description": "Consultas somente leitura ao cluster OpenShift em execução: versão e atualizações, operadores, nós e capacidade, consumo de CPU, memória e disco por projeto, pods, logs, deployments, eventos, rotas e modelos do OpenShift AI."
     }

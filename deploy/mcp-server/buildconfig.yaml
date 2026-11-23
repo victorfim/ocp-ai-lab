@@ -1,5 +1,5 @@
 # Faz o build da imagem dentro do OpenShift a partir deste repositório.
-# Inicie com: oc start-build ocp-cluster-mcp -n ocp-mcp --follow
+# Inicie com: oc start-build ocp-cluster-mcp -n ocp-ai-lab --follow
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:

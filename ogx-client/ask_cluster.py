@@ -5,6 +5,7 @@ MCP do lado do servidor e devolve a resposta final.
 
 Exemplos:
     export OGX_URL=http://<servico-ogx>.<projeto>.svc.cluster.local:8321
+    export MAAS_TOKEN=<token>   # só para modelos do Models as a Service
     python ask_cluster.py "Quais pods estão com problema no cluster?"
     python ask_cluster.py --model llama32-3b "Qual a versão do OpenShift?"
 """
@@ -12,12 +13,13 @@ Exemplos:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 
 from openai import OpenAI
 
-DEFAULT_MCP_URL = "http://ocp-cluster-mcp.ocp-mcp.svc.cluster.local:8000/mcp"
+DEFAULT_MCP_URL = "http://ocp-cluster-mcp.ocp-ai-lab.svc.cluster.local:8000/mcp"
 
 INSTRUCTIONS = (
     "Você é um assistente de operações de OpenShift. Para responder sobre o cluster, "
@@ -38,9 +40,15 @@ def main() -> int:
     parser.add_argument("--verbose", "-v", action="store_true", help="Mostra as chamadas de ferramenta")
     args = parser.parse_args()
 
+    # Modelos do Models as a Service exigem o token da subscription. O Playground o envia
+    # no header X-OGX-Provider-Data; fora dele, precisamos enviar.
+    headers = {}
+    if os.environ.get("MAAS_TOKEN"):
+        headers["X-OGX-Provider-Data"] = json.dumps({"vllm_api_token": os.environ["MAAS_TOKEN"]})
     client = OpenAI(
         base_url=args.ogx_url.rstrip("/") + "/v1",
         api_key=os.environ.get("OGX_API_KEY", "none"),
+        default_headers=headers,
     )
 
     model = args.model

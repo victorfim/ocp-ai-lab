@@ -21,14 +21,18 @@ execução, pronto para ser testado no **Gen AI Playground** e por um cliente OG
 | `deploy/ogx/` | Exemplo de `OGXServer` (só se você ainda não tiver um) |
 | `ogx-client/` | Cliente Python que pergunta ao OGX e deixa o modelo usar as ferramentas MCP |
 
-## Ferramentas MCP (todas somente leitura)
+## Ferramentas MCP (14, todas somente leitura)
 
 | Ferramenta | O que responde |
 |---|---|
 | `get_cluster_version` | Versão do OpenShift, canal, atualizações disponíveis |
+| `check_cluster_updates` | Atualizações do OpenShift: versões disponíveis, a mais nova do mesmo minor, atualizações com riscos, bloqueio de upgrade minor e atualização em andamento |
+| `check_operator_updates` | Operadores (OLM) com atualização pendente e se esperam aprovação manual |
 | `list_cluster_operators` | Estado dos ClusterOperators (opção: só os com problema) |
-| `list_nodes` | Nós, papéis, prontidão, CPU, memória e GPU |
+| `list_nodes` | Nós, papéis, prontidão, CPU, memória, GPU, tipo e família da instância |
+| `get_node_resources` | Capacidade de cada nó (CPU, memória, família, zona), quanto está reservado pelos pods e quanto está em uso; totais por família de instância |
 | `list_namespaces` | Projetos, incluindo se são projetos de ciência de dados |
+| `get_project_capacity` | Consumo por projeto: uso real de CPU e memória, requests e limits, ResourceQuotas e disco (PVCs: tamanho e uso real) |
 | `list_pods` | Pods, prontidão, reinícios e motivos de falha (opção: só os com problema) |
 | `get_pod_logs` | Últimas linhas de log de um pod (máximo 500) |
 | `list_deployments` | Réplicas desejadas e prontas, imagens |
@@ -42,6 +46,13 @@ tem autenticação, por isso não criamos Route: ele só é acessível de dentro
 Atenção: logs de pods podem conter dados sensíveis; remova `pods/log` da ClusterRole se
 não quiser expor isso.
 
+**De onde vêm os números de capacidade:**
+- Uso de CPU e memória: API `metrics.k8s.io` (o mesmo de `oc adm top`).
+- Uso real de disco dos PVCs: Prometheus do cluster (`kubelet_volume_stats_*`), via
+  Thanos Querier. Para isso o ServiceAccount recebe o papel `cluster-monitoring-view`
+  (somente leitura, em `clusterrolebinding-monitoring.yaml`). Sem ele, a ferramenta
+  mostra só o tamanho solicitado dos PVCs.
+
 ## Pré-requisitos
 
 - OpenShift 4.19+ com OpenShift AI 3.5, `oc` logado como **cluster-admin** (para a ClusterRole e o ConfigMap do Playground).
@@ -52,18 +63,25 @@ não quiser expor isso.
 
 ```bash
 oc apply -k deploy/mcp-server/
-oc start-build ocp-cluster-mcp -n ocp-mcp --follow   # o BuildConfig também dispara sozinho na criação
-oc rollout status deploy/ocp-cluster-mcp -n ocp-mcp
+oc start-build ocp-cluster-mcp -n ocp-ai-lab --follow   # o BuildConfig também dispara sozinho na criação
+oc rollout status deploy/ocp-cluster-mcp -n ocp-ai-lab
 ```
 
-Para usar outro namespace, troque `ocp-mcp` em `deploy/mcp-server/kustomization.yaml`,
-`namespace.yaml` e `clusterrolebinding.yaml`, e na URL do passo 2.
+Para usar outro namespace, troque `ocp-ai-lab` em `deploy/mcp-server/kustomization.yaml`,
+`namespace.yaml`, `clusterrolebinding.yaml` e `clusterrolebinding-monitoring.yaml`, e na URL do passo 2.
+
+Para atualizar um servidor já implantado depois de mudanças no código:
+
+```bash
+oc apply -k deploy/mcp-server/                      # aplica permissões novas
+oc start-build ocp-cluster-mcp -n ocp-ai-lab --follow   # nova imagem; o Deployment atualiza sozinho
+```
 
 Teste rápido de dentro do cluster:
 
 ```bash
-oc run mcp-test -n ocp-mcp --rm -it --restart=Never --image=registry.access.redhat.com/ubi9/ubi-minimal -- \
-  curl -s http://ocp-cluster-mcp.ocp-mcp.svc.cluster.local:8000/healthz
+oc run mcp-test -n ocp-ai-lab --rm -it --restart=Never --image=registry.access.redhat.com/ubi9/ubi-minimal -- \
+  curl -s http://ocp-cluster-mcp.ocp-ai-lab.svc.cluster.local:8000/healthz
 ```
 
 ## 2. Registrar no Gen AI Playground
@@ -98,8 +116,15 @@ oc get svc -n <projeto> | grep ogx       # ache o Service (porta 8321)
 
 pip install -r ogx-client/requirements.txt
 export OGX_URL=http://<servico-ogx>.<projeto>.svc.cluster.local:8321
+export MAAS_TOKEN=<token>    # só se o modelo vier do Models as a Service
 python ogx-client/ask_cluster.py -v "Quais pods estão com problema no cluster?"
 ```
+
+Se o modelo vem do **Models as a Service (MaaS)**, o OGX do Playground não guarda o token:
+o Playground envia o token da subscription em cada chamada, no header
+`X-OGX-Provider-Data`. Fora do Playground (incluindo o código do **View code**), envie
+esse header você mesmo, senão a chamada falha com erro 500 (um 401 do MaaS). O
+`ask_cluster.py` faz isso quando `MAAS_TOKEN` está definido.
 
 Se ainda não tiver um OGXServer, use `deploy/ogx/ogxserver.yaml` como ponto de partida
 (confira os campos com `oc explain ogxserver.spec`).

@@ -19,7 +19,8 @@ execução, pronto para ser testado no **Gen AI Playground** e por um cliente OG
 | `deploy/mcp-server/` | Manifestos Kustomize: Namespace, ServiceAccount, RBAC somente leitura, BuildConfig, ImageStream, Deployment e Service |
 | `deploy/playground/` | ConfigMap `gen-ai-aa-mcp-servers` que registra o servidor no Playground |
 | `deploy/ogx/` | Exemplo de `OGXServer` (só se você ainda não tiver um) |
-| `ogx-client/` | Cliente Python que pergunta ao OGX e deixa o modelo usar as ferramentas MCP |
+| `ogx-client/` | Cliente Python que pergunta ao OGX e deixa o modelo usar as ferramentas MCP (e, opcionalmente, RAG) |
+| `rag/` | Runbooks de SRE de exemplo (Markdown e PDF) para testar RAG no Playground junto com o MCP |
 
 ## Ferramentas MCP (14, todas somente leitura)
 
@@ -128,6 +129,13 @@ esse header você mesmo, senão a chamada falha com erro 500 (um 401 do MaaS). O
 
 Se ainda não tiver um OGXServer, use `deploy/ogx/ogxserver.yaml` como ponto de partida
 (confira os campos com `oc explain ogxserver.spec`).
+
+## 4. RAG com runbooks de SRE
+
+A pasta [`rag/`](rag/README.md) tem runbooks de exemplo (severidades, janela de mudança,
+limites de capacidade, procedimentos) para subir na aba **Knowledge** do Playground. Com o
+MCP marcado, o modelo cruza o estado real do cluster com as regras dos runbooks. O passo a
+passo, o prompt de sistema e as perguntas da demo estão em [`rag/README.md`](rag/README.md).
 
 ## Desenvolvimento local
 
